@@ -44,9 +44,12 @@ export default function CategoryPage({ params }: PageProps) {
 
     if (productIdFromUrl && products.length > 0) {
       const foundProduct = products.find((p) => p.id === productIdFromUrl);
-      if (foundProduct) {
-        setSelectedProduct(foundProduct);
-      }
+      const selecProduct = () => {
+        if (foundProduct) {
+          setSelectedProduct(foundProduct);
+        }
+      };
+      selecProduct();
     }
   }, [searchParams, products]);
 

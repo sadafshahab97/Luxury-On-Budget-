@@ -123,7 +123,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
         <div className="flex items-center justify-center gap-4 py-16">
           <div className="h-px w-12 bg-slate-200"></div>
           <span className="text-slate-400 text-sm font-medium italic">
-            You've seen everything!
+            {`You've seen everything!`}
           </span>
           <div className="h-px w-12 bg-slate-200"></div>
         </div>

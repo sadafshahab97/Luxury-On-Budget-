@@ -26,7 +26,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, index }) => {
       ? product.category.toLowerCase()
       : "products";
     const productId = product.id;
-    const websiteLink = `${window.location.origin}/category/${categorySlug}?productId=${productId}`;
+    const websiteLink = `${process.env.DEPLOYED_URL}/category/${categorySlug}?productId=${productId}`;
 
     // --- Rich Text Copy Logic ---
     const shareMessage = `🔥 *Check out this viral find on PinTrending!*

@@ -23,7 +23,30 @@ export interface Product {
   category: string;
   created_at?: string;
 }
-
+interface RawProductInput {
+  product_name?: string;
+  price?: {
+    current_price?: string;
+    original_price?: string;
+    savings?: string;
+  };
+  current_price?: string;
+  original_price?: string;
+  savings?: string;
+  rating?: {
+    score?: string;
+    total_sold?: string;
+  };
+  rating_score?: string;
+  total_sold?: string;
+  offer_details?: {
+    tag?: string;
+  };
+  offer_tag?: string;
+  image_url: string;
+  product_url: string;
+  category: string;
+}
 interface ProductContextType {
   products: Product[];
   loading: boolean;
@@ -71,10 +94,10 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   // 2. Add Product Logic (Handling Temu JSON)
-  const addProduct = async (jsonData: any) => {
+  const addProduct = async (jsonData: RawProductInput): Promise<void> => {
     try {
-      // Temu JSON structure mapping
-      const newEntry = {
+      // Omit id because DB handles it
+      const newEntry: Omit<Product, "id" | "created_at"> = {
         product_name: jsonData.product_name || "New Product",
         current_price:
           jsonData.price?.current_price || jsonData.current_price || "N/A",
@@ -95,7 +118,7 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
         .select();
 
       if (error) throw error;
-      if (data) setProducts((prev) => [data[0], ...prev]);
+      if (data) setProducts((prev) => [data[0] as Product, ...prev]);
     } catch (error) {
       console.error("Error adding product:", error);
       throw error;
@@ -114,20 +137,23 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // 4. Edit Product (Ensuring Flat Data for Supabase)
-  const editProduct = async (id: string, rawData: any) => {
+  const editProduct = async (
+    id: string,
+    updatedData: Partial<Product>,
+  ): Promise<void> => {
     try {
-      // Step A: Data ko DB columns ke mutabiq map karein (Flattening)
-      const formattedData = {
-        product_name: rawData.product_name,
-        current_price: rawData.price?.current_price || rawData.current_price,
-        original_price: rawData.price?.original_price || rawData.original_price,
-        savings: rawData.price?.savings || rawData.savings,
-        rating_score: rawData.rating?.score || rawData.rating_score,
-        total_sold: rawData.rating?.total_sold || rawData.total_sold,
-        offer_tag: rawData.offer_details?.tag || rawData.offer_tag,
-        image_url: rawData.image_url,
-        product_url: rawData.product_url,
-        category: rawData.category,
+      // Step A: Mapping with explicit types
+      const formattedData: Partial<Product> = {
+        product_name: updatedData.product_name,
+        current_price: updatedData.current_price,
+        original_price: updatedData.original_price,
+        savings: updatedData.savings,
+        rating_score: updatedData.rating_score,
+        total_sold: updatedData.total_sold,
+        offer_tag: updatedData.offer_tag,
+        image_url: updatedData.image_url,
+        product_url: updatedData.product_url,
+        category: updatedData.category,
       };
 
       // Step B: Supabase Update Call
@@ -135,24 +161,17 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
         .from("products")
         .update(formattedData)
         .eq("id", id)
-        .select(); // .select() se confirm hota hai ke update hua
+        .select();
 
       if (error) {
-        console.error(
-          "Supabase Update Error Details:",
-          error.message,
-          error.details,
-        );
+        console.error("Supabase Update Error:", error.message);
         alert(`DB Update Failed: ${error.message}`);
         return;
       }
 
-      if (!data || data.length === 0) {
-        console.warn("No rows were updated. Check if the ID is correct.");
-        return;
-      }
+      if (!data || data.length === 0) return;
 
-      // Step C: Update Local State only after DB Success
+      // Step C: Update Local State
       setProducts((prev) =>
         prev.map((p) => (p.id === id ? { ...p, ...formattedData } : p)),
       );

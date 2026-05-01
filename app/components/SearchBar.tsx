@@ -141,7 +141,7 @@ export const SearchBar = () => {
               </div>
             ) : (
               <div className="p-4 text-center text-sm text-slate-500">
-                No products found matching "{query}"
+                No products found matching {`"${query}"`}
               </div>
             )}
           </motion.div>
