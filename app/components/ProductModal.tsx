@@ -63,7 +63,7 @@ export const ProductModal = ({
             </span>
           </div>
 
-          <h2 className="text-xl md:text-3xl font-extrabold text-slate-900 leading-tight mb-2">
+          <h2 className="text-lg md:text-3xl font-extrabold text-slate-900 leading-tight mb-2">
             {product.product_name}
           </h2>
 
