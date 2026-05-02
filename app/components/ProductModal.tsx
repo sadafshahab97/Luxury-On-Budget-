@@ -3,7 +3,7 @@
 import { Product } from "../context/ProductContext";
 import { X, ExternalLink, ShoppingBag, BadgeCheck } from "lucide-react";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 export const ProductModal = ({
   product,
