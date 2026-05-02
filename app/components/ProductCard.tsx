@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Product } from "../context/ProductContext";
-import { ExternalLink, Star } from "lucide-react";
+import {Star } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
