@@ -2,8 +2,7 @@
 
 import React from "react";
 import { Product } from "../context/ProductContext";
-import { ExternalLink, Star, Share2 } from "lucide-react";
-import { useToast } from "./ToastContext";
+import { ExternalLink, Star } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -14,39 +13,39 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, index }) => {
-  const { toast } = useToast();
+  // const { toast } = useToast();
 
   const displayRating =
     product.rating_score && product.rating_score !== "N/A"
       ? product.rating_score.match(/\d+(\.\d+)?/)?.[0] || "5.0"
       : "5.0";
 
-  const handleShare = async () => {
-    const categorySlug = product.category
-      ? product.category.toLowerCase()
-      : "products";
-    const productId = product.id;
-    const websiteLink = `${process.env.DEPLOYED_URL}/category/${categorySlug}?productId=${productId}`;
+  //   const handleShare = async () => {
+  //     const categorySlug = product.category
+  //       ? product.category.toLowerCase()
+  //       : "products";
+  //     const productId = product.id;
+  //     const websiteLink = `${process.env.DEPLOYED_URL}/category/${categorySlug}?productId=${productId}`;
 
-    // --- Rich Text Copy Logic ---
-    const shareMessage = `🔥 *Check out this viral find on PinTrending!*
+  //     // --- Rich Text Copy Logic ---
+  //     const shareMessage = `🔥 *Check out this viral find on PinTrending!*
 
-📦 *Product:* ${product.product_name}
-💰 *Price:* ${product.current_price} ${product.original_price !== "N/A" ? `(Was: ${product.original_price})` : ""}
-⭐ *Rating:* ${displayRating}/5
+  // 📦 *Product:* ${product.product_name}
+  // 💰 *Price:* ${product.current_price} ${product.original_price !== "N/A" ? `(Was: ${product.original_price})` : ""}
+  // ⭐ *Rating:* ${displayRating}/5
 
-🔗 *Buy Here:* ${websiteLink}
+  // 🔗 *Buy Here:* ${websiteLink}
 
-#PinTrending #ViralProducts #Shopping`;
+  // #PinTrending #ViralProducts #Shopping`;
 
-    try {
-      await navigator.clipboard.writeText(shareMessage);
-      toast("Product details & link copied!");
-    } catch (err) {
-      console.error("Failed to copy text: ", err);
-      toast("Failed to copy details");
-    }
-  };
+  //     try {
+  //       await navigator.clipboard.writeText(shareMessage);
+  //       toast("Product details & link copied!");
+  //     } catch (err) {
+  //       console.error("Failed to copy text: ", err);
+  //       toast("Failed to copy details");
+  //     }
+  //   };
 
   return (
     <motion.div
@@ -95,7 +94,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, index }) => {
           )}
         </div>
 
-        <h3 className="font-bold text-slate-800 text-md line-clamp-2 mb-3 leading-snug group-hover:text-blue-600 transition-colors">
+        <h3 className="font-bold text-slate-800 text-md line-clamp-2 mb-3 leading-snug group-hover:text-red-600 transition-colors">
           {product.product_name}
         </h3>
 
@@ -112,19 +111,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, index }) => {
           </div>
 
           <div className="flex gap-2">
-            <button
+            {/* <button
               onClick={handleShare}
-              className="p-3 rounded-2xl bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all border border-transparent hover:border-blue-100"
+              className="p-3 rounded-2xl bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-all border border-transparent hover:border-red-100"
               title="Share Product"
             >
               <Share2 className="w-5 h-5" />
-            </button>
+            </button> */}
             <Link
               href={product.product_url || "#"}
               target="_blank"
-              className="p-3 rounded-2xl bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 active:scale-95"
+              className="p-3 rounded-2xl bg-red-600 text-white hover:bg-red-700 transition-all shadow-lg shadow-red-100 active:scale-95"
             >
-              <ExternalLink className="w-5 h-5" />
+              View On Store
             </Link>
           </div>
         </div>

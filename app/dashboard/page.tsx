@@ -11,8 +11,7 @@ import {
   Trash2,
   Edit2,
   X,
-  Lock,
-  LogOut,
+
   LayoutGrid,
   Package,
   List,
@@ -23,6 +22,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { LogoutButton } from "../components/LogoutButton";
+import { supabase } from "../lib/supabase";
+import { useRouter } from "next/navigation";
 interface ProductType {
   id: string;
   product_name: string;
@@ -40,10 +42,9 @@ interface ProductType {
 export default function DashboardPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [password, setPassword] = useState("");
   const [jsonInput, setJsonInput] = useState("");
   const [categoryId, setCategoryId] = useState(CATEGORIES[0].id);
-
+  const router = useRouter();
   const {
     products,
     loading: contextLoading,
@@ -73,14 +74,66 @@ export default function DashboardPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
+  // Is useEffect ko replace karein
   useEffect(() => {
-    const isloggedIn = () => {
-      const loggedIn = localStorage.getItem("isAdminLoggedIn") === "true";
-      setIsAuthenticated(loggedIn);
-      setIsLoaded(true);
+    const checkAuth = async () => {
+      try {
+        // 1. Check User Session
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (!user || userError) {
+          console.log("No user found, redirecting...");
+          router.push("/login");
+          return;
+        }
+
+        // 2. Database se admin status check karein
+        // maybeSingle isliye taake 0 rows par error na aaye
+        const { data: profile} = await supabase
+          .from("profiles")
+          .select("is_admin")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        console.log("Dashboard auth check:", { userId: user.id, profile });
+
+        if (profile?.is_admin) {
+          // Case A: Admin hai
+          setIsAuthenticated(true);
+        } else {
+          // Case B: Profile nahi hai ya admin status false hai
+          console.log("Admin status missing. Auto-updating profile...");
+
+          const { error: upsertError } = await supabase
+            .from("profiles")
+            .upsert({
+              id: user.id,
+              email: user.email,
+              is_admin: true,
+              updated_at: new Date().toISOString(),
+            });
+
+          if (upsertError) {
+            console.error("Upsert failed:", upsertError);
+            router.push("/login"); // Agar update na ho sake toh safe side login bhej dein
+            return;
+          }
+
+          setIsAuthenticated(true);
+        }
+      } catch (err) {
+        console.error("Auth check unexpected error:", err);
+        router.push("/login");
+      } finally {
+        setIsLoaded(true);
+      }
     };
-    isloggedIn();
-  }, []);
+
+    checkAuth();
+  }, [router]);
 
   const totalPages = Math.ceil(products.length / itemsPerPage);
   const currentProducts = products.slice(
@@ -132,18 +185,19 @@ export default function DashboardPage() {
   };
 
   const handleShare = async ({ product }: { product: Product }) => {
-    const displayRating =
-      product.rating_score && product.rating_score !== "N/A"
-        ? product.rating_score.match(/\d+(\.\d+)?/)?.[0] || "5.0"
-        : "5.0";
-    const categorySlug = product.category
-      ? product.category.toLowerCase()
-      : "products";
-    const productId = product.id;
-    const websiteLink = `${window.location.origin}/category/${categorySlug}?productId=${productId}`;
+    try {
+      // --- PART 1: TEXT COPY LOGIC ---
+      const displayRating =
+        product.rating_score && product.rating_score !== "N/A"
+          ? product.rating_score.match(/\d+(\.\d+)?/)?.[0] || "5.0"
+          : "5.0";
 
-    // --- Rich Text Copy Logic ---
-    const shareMessage = `🔥 *Check out this viral find on PinTrending!*
+      const categorySlug = product.category
+        ? product.category.toLowerCase()
+        : "products";
+      const websiteLink = `${window.location.origin}/category/${categorySlug}?productId=${product.id}`;
+
+      const shareMessage = `🔥 *Check out this viral find on PinTrending!*
 
 📦 *Product:* ${product.product_name}
 💰 *Price:* ${product.current_price} ${product.original_price !== "N/A" ? `(Was: ${product.original_price})` : ""}
@@ -153,12 +207,75 @@ export default function DashboardPage() {
 
 #PinTrending #ViralProducts #Shopping`;
 
-    try {
+      // Clipboard par copy karein
       await navigator.clipboard.writeText(shareMessage);
-      toast("Product details & link copied!");
+
+      // --- PART 2: IMAGE AVIF TO JPEG DOWNLOAD ---
+      if (!product.image_url) {
+        toast("Text copied, but no image url found.");
+        return;
+      }
+
+      toast("Downloading image...");
+
+      /**
+       * FIX: window.Image() use kiya hai taake Next.js ke <Image /> component
+       * ke sath conflict na ho aur TypeScript error khatam ho jaye.
+       */
+      const img = new window.Image();
+
+      // External images (Amazon/Temu) ke liye CORS handling
+      img.crossOrigin = "Anonymous";
+
+      img.onload = () => {
+        // Canvas setup
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          toast("Failed to process image.");
+          return;
+        }
+
+        // Original size settings
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+
+        // Draw the AVIF image onto the canvas
+        ctx.drawImage(img, 0, 0);
+
+        // Convert to JPEG (Quality: 0.9)
+        const jpegURL = canvas.toDataURL("image/jpeg", 0.9);
+
+        // Create download link
+        const link = document.createElement("a");
+        link.href = jpegURL;
+
+        // Filename ko clean karein (Special characters hata kar)
+        const fileName = product.product_name
+          .substring(0, 20)
+          .replace(/[^a-z0-9]/gi, "_")
+          .toLowerCase();
+
+        link.download = `${fileName}_pintrending.jpg`;
+
+        // Trigger download
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        toast("Text copied & JPEG downloaded! ✅");
+      };
+
+      img.onerror = (err) => {
+        console.error("Image load error:", err);
+        toast("Text copied, but image conversion failed (CORS issue).");
+      };
+
+      // Load the image
+      img.src = product.image_url;
     } catch (err) {
-      console.error("Failed to copy text: ", err);
-      toast("Failed to copy details");
+      console.error("Share handler failed:", err);
+      toast("Something went wrong!");
     }
   };
   // Is interface ko component ke bahar ya top par rakhein
@@ -188,7 +305,7 @@ export default function DashboardPage() {
         await addProduct({
           ...item,
           category: categoryId,
-          rating_score: item.rating_score ?? '0',
+          rating_score: item.rating_score ?? "0",
         } as Omit<Product, "id" | "created_at">); // Ensure compatibility with your context type
       }
 
@@ -207,63 +324,24 @@ export default function DashboardPage() {
     }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password === process.env.DASHBOARD_PASS) {
-      localStorage.setItem("isAdminLoggedIn", "true");
-      setIsAuthenticated(true);
-      toast("Welcome Admin!");
-    } else {
-      alert("Incorrect Password");
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("isAdminLoggedIn");
-    setIsAuthenticated(false);
-  };
-
-  if (!isLoaded) return null;
-
-  if (!isAuthenticated) {
+  if (!isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6 font-sans">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md w-full bg-white rounded-3xl shadow-xl p-10 text-center border border-slate-100"
-        >
-          <div className="mx-auto bg-blue-50 text-blue-600 w-20 h-20 rounded-2xl flex items-center justify-center mb-8 border border-blue-100">
-            <Lock className="w-10 h-10" />
-          </div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-3">
-            Admin Access
-          </h1>
-          <form onSubmit={handleLogin} className="space-y-5">
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter password..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <button
-              type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 rounded-2xl transition-all"
-            >
-              Unlock Dashboard
-            </button>
-          </form>
-        </motion.div>
+      <div className="flex h-screen items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent mx-auto"></div>
+          <p className="mt-4 text-gray-600 font-medium">
+            Authenticating Admin...
+          </p>
+        </div>
       </div>
     );
   }
-
+  if (!isAuthenticated) return null;
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="max-w-7xl mx-auto px-4 py-8 min-h-screen font-sans"
+      className="max-w-7xl mx-auto px-4 py-8 min-h-screen"
     >
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
@@ -272,13 +350,8 @@ export default function DashboardPage() {
             <LayoutGrid className="w-8 h-8 text-blue-600" /> Admin Panel
           </h1>
           <p className="text-slate-500">Inventory & Database Management</p>
+          <LogoutButton />
         </div>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 text-slate-600 hover:text-red-600 bg-white border border-slate-200 px-4 py-2 rounded-xl transition-all shadow-sm"
-        >
-          <LogOut className="w-4 h-4" /> Logout
-        </button>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
