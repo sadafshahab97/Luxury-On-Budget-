@@ -204,8 +204,7 @@ export default function DashboardPage() {
 ⭐ *Rating:* ${displayRating}/5
 
 🔗 *Buy Here:* ${websiteLink}
-
-#PinTrending #ViralProducts #Shopping`;
+`;
 
       // Clipboard par copy karein
       await navigator.clipboard.writeText(shareMessage);
