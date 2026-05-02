@@ -1,4 +1,3 @@
-// components/ProductModal.tsx
 "use client";
 
 import { Product } from "../context/ProductContext";
@@ -67,10 +66,11 @@ export const ProductModal = ({
             <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 leading-tight mb-2">
               {product.product_name}
             </h2>
-            
+
             <p className="text-slate-500 text-sm mb-6 leading-relaxed">
-              Experience premium quality and design with our latest {product.category} collection. 
-              Built for performance and everyday style.
+              Experience premium quality and design with our latest{" "}
+              {product.category} collection. Built for performance and everyday
+              style.
             </p>
 
             <div className="flex items-baseline gap-3 mb-8">
@@ -94,7 +94,7 @@ export const ProductModal = ({
                 Buy Now
                 <ExternalLink className="w-4 h-4 opacity-70" />
               </a>
-              
+
               <p className="text-center text-slate-400 text-xs mt-2">
                 Secure checkout provided by official store
               </p>

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Product } from "../context/ProductContext";
-import {Star } from "lucide-react";
+import { Star } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -13,39 +13,10 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, index }) => {
-  // const { toast } = useToast();
-
   const displayRating =
     product.rating_score && product.rating_score !== "N/A"
       ? product.rating_score.match(/\d+(\.\d+)?/)?.[0] || "5.0"
       : "5.0";
-
-  //   const handleShare = async () => {
-  //     const categorySlug = product.category
-  //       ? product.category.toLowerCase()
-  //       : "products";
-  //     const productId = product.id;
-  //     const websiteLink = `${process.env.DEPLOYED_URL}/category/${categorySlug}?productId=${productId}`;
-
-  //     // --- Rich Text Copy Logic ---
-  //     const shareMessage = `🔥 *Check out this viral find on PinTrending!*
-
-  // 📦 *Product:* ${product.product_name}
-  // 💰 *Price:* ${product.current_price} ${product.original_price !== "N/A" ? `(Was: ${product.original_price})` : ""}
-  // ⭐ *Rating:* ${displayRating}/5
-
-  // 🔗 *Buy Here:* ${websiteLink}
-
-  // #PinTrending #ViralProducts #Shopping`;
-
-  //     try {
-  //       await navigator.clipboard.writeText(shareMessage);
-  //       toast("Product details & link copied!");
-  //     } catch (err) {
-  //       console.error("Failed to copy text: ", err);
-  //       toast("Failed to copy details");
-  //     }
-  //   };
 
   return (
     <motion.div

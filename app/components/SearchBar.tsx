@@ -15,7 +15,7 @@ export const SearchBar = () => {
 
   const { products } = useProducts();
 
-  // Close dropdown when clicking outside
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -29,7 +29,7 @@ export const SearchBar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Search Logic - Updated for Supabase Schema
+ 
   useEffect(() => {
     const search = () => {
       if (query.trim().length === 0) {
@@ -44,7 +44,7 @@ export const SearchBar = () => {
       const timer = setTimeout(() => {
         const lowercaseQuery = query.toLowerCase();
 
-        // Fix: Filter using 'product_name' instead of 'title'
+     
         const filtered = products.filter(
           (p) =>
             p.product_name?.toLowerCase().includes(lowercaseQuery) ||
@@ -102,7 +102,7 @@ export const SearchBar = () => {
                     onClick={() => {
                       setIsOpen(false);
                       setQuery("");
-                      // Affiliate link opens in new tab
+             
                       if (product.product_url) {
                         window.open(product.product_url, "_blank");
                       }
@@ -111,7 +111,7 @@ export const SearchBar = () => {
                   >
                     <div className="relative w-12 h-12 shrink-0">
                       <Image
-                        src={product.image_url || "/placeholder.png"} // Added fallback
+                        src={product.image_url || "/placeholder.png"}
                         alt={product.product_name}
                         fill
                         sizes="48px"

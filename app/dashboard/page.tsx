@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Product, useProducts } from "../context/ProductContext";
 import { useToast } from "../components/ToastContext";
@@ -11,7 +11,6 @@ import {
   Trash2,
   Edit2,
   X,
-
   LayoutGrid,
   Package,
   List,
@@ -19,6 +18,10 @@ import {
   ChevronRight,
   ExternalLink,
   Share2,
+  Tag,
+  Search,
+  Calendar,
+  XCircle,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -40,6 +43,10 @@ interface ProductType {
   created_at?: string;
 }
 export default function DashboardPage() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [dateSort, setDateSort] = useState<"newest" | "oldest">("newest");
+  const [selectedDate, setSelectedDate] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [jsonInput, setJsonInput] = useState("");
@@ -74,11 +81,9 @@ export default function DashboardPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
-  // Is useEffect ko replace karein
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // 1. Check User Session
         const {
           data: { user },
           error: userError,
@@ -90,9 +95,7 @@ export default function DashboardPage() {
           return;
         }
 
-        // 2. Database se admin status check karein
-        // maybeSingle isliye taake 0 rows par error na aaye
-        const { data: profile} = await supabase
+        const { data: profile } = await supabase
           .from("profiles")
           .select("is_admin")
           .eq("id", user.id)
@@ -101,10 +104,8 @@ export default function DashboardPage() {
         console.log("Dashboard auth check:", { userId: user.id, profile });
 
         if (profile?.is_admin) {
-          // Case A: Admin hai
           setIsAuthenticated(true);
         } else {
-          // Case B: Profile nahi hai ya admin status false hai
           console.log("Admin status missing. Auto-updating profile...");
 
           const { error: upsertError } = await supabase
@@ -118,7 +119,7 @@ export default function DashboardPage() {
 
           if (upsertError) {
             console.error("Upsert failed:", upsertError);
-            router.push("/login"); // Agar update na ho sake toh safe side login bhej dein
+            router.push("/login");
             return;
           }
 
@@ -135,12 +136,49 @@ export default function DashboardPage() {
     checkAuth();
   }, [router]);
 
-  const totalPages = Math.ceil(products.length / itemsPerPage);
-  const currentProducts = products.slice(
+  const filteredProducts = useMemo(() => {
+    let result = [...products];
+
+    if (searchQuery.trim()) {
+      result = result.filter((p) =>
+        p.product_name.toLowerCase().includes(searchQuery.toLowerCase()),
+      );
+    }
+
+    if (selectedCategory !== "all") {
+      result = result.filter((p) => p.category === selectedCategory);
+    }
+
+    if (selectedDate) {
+      result = result.filter((p) => {
+        if (!p.created_at) return false;
+
+        const productDate = new Date(p.created_at).toISOString().split("T")[0];
+        return productDate === selectedDate;
+      });
+    }
+
+    result.sort((a, b) => {
+      const dateA = new Date(a.created_at || 0).getTime();
+      const dateB = new Date(b.created_at || 0).getTime();
+      return dateSort === "newest" ? dateB - dateA : dateA - dateB;
+    });
+
+    return result;
+  }, [products, searchQuery, selectedCategory, selectedDate, dateSort]);
+
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const currentProducts = filteredProducts.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage,
   );
 
+  useEffect(() => {
+    const setPage = () => {
+      setCurrentPage(1);
+    };
+    setPage();
+  }, [searchQuery, selectedCategory, dateSort]);
   const handleEditClick = (product: Product) => {
     setEditingProductId(product.id);
 
@@ -162,10 +200,10 @@ export default function DashboardPage() {
   const handleSaveEdit = async () => {
     if (editingProductId) {
       setIsProcessing(true);
-      console.log("Saving Data to DB:", editFormData); // Yeh check karne ke liye ke data flat hai ya nahi
+      console.log("Saving Data to DB:", editFormData);
       try {
         await editProduct(editingProductId, editFormData);
-        // Agar yahan tak pahunche hain, toh matlab DB update ho gaya
+
         toast("Product updated successfully!");
         setEditingProductId(null);
       } catch (error) {
@@ -186,7 +224,6 @@ export default function DashboardPage() {
 
   const handleShare = async ({ product }: { product: Product }) => {
     try {
-      // --- PART 1: TEXT COPY LOGIC ---
       const displayRating =
         product.rating_score && product.rating_score !== "N/A"
           ? product.rating_score.match(/\d+(\.\d+)?/)?.[0] || "5.0"
@@ -206,10 +243,8 @@ export default function DashboardPage() {
 🔗 *Buy Here:* ${websiteLink}
 `;
 
-      // Clipboard par copy karein
       await navigator.clipboard.writeText(shareMessage);
 
-      // --- PART 2: IMAGE AVIF TO JPEG DOWNLOAD ---
       if (!product.image_url) {
         toast("Text copied, but no image url found.");
         return;
@@ -223,11 +258,9 @@ export default function DashboardPage() {
        */
       const img = new window.Image();
 
-      // External images (Amazon/Temu) ke liye CORS handling
       img.crossOrigin = "Anonymous";
 
       img.onload = () => {
-        // Canvas setup
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
         if (!ctx) {
@@ -235,21 +268,16 @@ export default function DashboardPage() {
           return;
         }
 
-        // Original size settings
         canvas.width = img.naturalWidth;
         canvas.height = img.naturalHeight;
 
-        // Draw the AVIF image onto the canvas
         ctx.drawImage(img, 0, 0);
 
-        // Convert to JPEG (Quality: 0.9)
         const jpegURL = canvas.toDataURL("image/jpeg", 0.9);
 
-        // Create download link
         const link = document.createElement("a");
         link.href = jpegURL;
 
-        // Filename ko clean karein (Special characters hata kar)
         const fileName = product.product_name
           .substring(0, 20)
           .replace(/[^a-z0-9]/gi, "_")
@@ -257,7 +285,6 @@ export default function DashboardPage() {
 
         link.download = `${fileName}_pintrending.jpg`;
 
-        // Trigger download
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -270,14 +297,13 @@ export default function DashboardPage() {
         toast("Text copied, but image conversion failed (CORS issue).");
       };
 
-      // Load the image
       img.src = product.image_url;
     } catch (err) {
       console.error("Share handler failed:", err);
       toast("Something went wrong!");
     }
   };
-  // Is interface ko component ke bahar ya top par rakhein
+
   interface ImportProduct {
     [key: string]: string | number | boolean | undefined | null;
   }
@@ -291,28 +317,24 @@ export default function DashboardPage() {
     setIsProcessing(true);
 
     try {
-      // JSON.parse ka result hum unknown cast karke array check karenge
       const parsedData: unknown = JSON.parse(jsonInput);
 
-      // Typescript ko batana ke ye ya to ek object hai ya array
       const items = Array.isArray(parsedData)
         ? (parsedData as ImportProduct[])
         : [parsedData as ImportProduct];
 
-      // Sequential updates with proper typing
       for (const item of items) {
         await addProduct({
           ...item,
           category: categoryId,
           rating_score: item.rating_score ?? "0",
-        } as Omit<Product, "id" | "created_at">); // Ensure compatibility with your context type
+        } as Omit<Product, "id" | "created_at">);
       }
 
       toast(`Imported ${items.length} products successfully!`);
       setJsonInput("");
       setActiveTab("products");
     } catch (error) {
-      // Catch block mein 'any' ki jagah Instance check use karein
       if (error instanceof Error) {
         alert("Invalid JSON format: " + error.message);
       } else {
@@ -453,110 +475,182 @@ export default function DashboardPage() {
           )}
 
           {activeTab === "products" && (
-            <div className="bg-white rounded-3xl border shadow-sm overflow-hidden">
-              <div className="p-6 border-b bg-slate-50/50">
-                <h2 className="font-bold text-lg text-slate-800">
-                  Product Management
-                </h2>
+            <>
+              <div className="space-y-4">
+                {/* --- New Filter Bar UI --- */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-4 rounded-3xl border shadow-sm">
+                  {/* Search */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search products..."
+                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      className="w-full px-4 py-3 rounded-xl border bg-white text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                    />
+                    {selectedDate && (
+                      <button
+                        onClick={() => setSelectedDate("")}
+                        className="absolute right-8 top-1/2 -translate-y-1/2 text-red-400 hover:text-red-600"
+                      >
+                        <XCircle className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                  {/* Category Filter */}
+                  <div className="relative">
+                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <select
+                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 text-sm appearance-none"
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                    >
+                      <option value="all">All Categories</option>
+                      {CATEGORIES.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Date Sort */}
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <select
+                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 text-sm appearance-none"
+                      value={dateSort}
+                      onChange={(e) =>
+                        setDateSort(e.target.value as "newest" | "oldest")
+                      }
+                    >
+                      <option value="newest">Newest First</option>
+                      <option value="oldest">Oldest First</option>
+                    </select>
+                  </div>
+                  {selectedDate && (
+                    <div className="mt-3 text-xs font-bold text-blue-600 flex items-center gap-2">
+                      <Calendar className="w-3 h-3" />
+                      Filtering by date: {selectedDate}
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div className="divide-y overflow-x-auto">
-                {contextLoading ? (
-                  <div className="p-20 text-center text-slate-400">
-                    Syncing with database...
-                  </div>
-                ) : currentProducts.length > 0 ? (
-                  currentProducts.map((product) => (
-                    <div
-                      key={product.id}
-                      className="flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors min-w-150"
-                    >
-                      <div className="w-16 h-16 rounded-lg overflow-hidden border bg-white shrink-0">
-                        <Image
-                          src={product.image_url || "/placeholder.png"}
-                          className="w-full h-full object-cover"
-                          alt=""
-                          width={500}
-                          height={500}
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-slate-900 truncate text-sm">
-                          {product.product_name}
-                        </h3>
-                        <div className="flex items-center gap-3 mt-1 text-xs">
-                          <span className="text-emerald-600 font-bold">
-                            {product.current_price}
-                          </span>
-                          <span className="text-slate-400 line-through">
-                            {product.original_price}
-                          </span>
-                          <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium">
-                            {product.offer_tag !== "N/A"
-                              ? product.offer_tag
-                              : "Standard"}
-                          </span>
+              <div className="bg-white rounded-3xl border shadow-sm overflow-hidden">
+                <div className="p-6 border-b bg-slate-50/50">
+                  <h2 className="font-bold text-lg text-slate-800">
+                    Product Management
+                  </h2>
+                </div>
+
+                <div className="divide-y overflow-x-auto">
+                  {contextLoading ? (
+                    <div className="p-20 text-center text-slate-400">
+                      Syncing with database...
+                    </div>
+                  ) : currentProducts.length > 0 ? (
+                    currentProducts.map((product) => (
+                      <div
+                        key={product.id}
+                        className="flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors min-w-150"
+                      >
+                        <div className="w-16 h-16 rounded-lg overflow-hidden border bg-white shrink-0">
+                          <Image
+                            src={product.image_url || "/placeholder.png"}
+                            className="w-full h-full object-cover"
+                            alt=""
+                            width={500}
+                            height={500}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-slate-900 truncate text-sm">
+                            {product.product_name}
+                          </h3>
+                          <div className="flex items-center gap-3 mt-1 text-xs">
+                            <span className="text-emerald-600 font-bold">
+                              {product.current_price}
+                            </span>
+                            <span className="text-slate-400 line-through">
+                              {product.original_price}
+                            </span>
+                            <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium">
+                              {product.offer_tag !== "N/A"
+                                ? product.offer_tag
+                                : "Standard"}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleShare({ product })}
+                            className="p-3 rounded-2xl bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all border border-transparent hover:border-blue-100"
+                            title="Share Product"
+                          >
+                            <Share2 className="w-5 h-5" />
+                          </button>
+                          <Link
+                            href={product.product_url}
+                            target="_blank"
+                            className="p-2.5 text-slate-400 hover:text-slate-600 border rounded-xl bg-white transition-all shadow-sm"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </Link>
+                          <button
+                            onClick={() => handleEditClick(product)}
+                            className="p-2.5 text-blue-500 hover:bg-blue-50 border border-blue-100 rounded-xl bg-white transition-all shadow-sm"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(product.id)}
+                            className="p-2.5 text-red-500 hover:bg-red-50 border border-red-100 rounded-xl bg-white transition-all shadow-sm"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleShare({ product })}
-                          className="p-3 rounded-2xl bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all border border-transparent hover:border-blue-100"
-                          title="Share Product"
-                        >
-                          <Share2 className="w-5 h-5" />
-                        </button>
-                        <Link
-                          href={product.product_url}
-                          target="_blank"
-                          className="p-2.5 text-slate-400 hover:text-slate-600 border rounded-xl bg-white transition-all shadow-sm"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                        </Link>
-                        <button
-                          onClick={() => handleEditClick(product)}
-                          className="p-2.5 text-blue-500 hover:bg-blue-50 border border-blue-100 rounded-xl bg-white transition-all shadow-sm"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(product.id)}
-                          className="p-2.5 text-red-500 hover:bg-red-50 border border-red-100 rounded-xl bg-white transition-all shadow-sm"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="p-20 text-center text-slate-400">
+                      No products found.
                     </div>
-                  ))
-                ) : (
-                  <div className="p-20 text-center text-slate-400">
-                    No products found.
+                  )}
+                </div>
+
+                {totalPages > 1 && (
+                  <div className="p-4 border-t flex justify-between items-center bg-slate-50/30">
+                    <button
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage((prev) => prev - 1)}
+                      className="p-2 disabled:opacity-30 border rounded-lg bg-white"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <span className="text-sm font-medium text-slate-600">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage((prev) => prev + 1)}
+                      className="p-2 disabled:opacity-30 border rounded-lg bg-white"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
                   </div>
                 )}
               </div>
-
-              {totalPages > 1 && (
-                <div className="p-4 border-t flex justify-between items-center bg-slate-50/30">
-                  <button
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage((prev) => prev - 1)}
-                    className="p-2 disabled:opacity-30 border rounded-lg bg-white"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  <span className="text-sm font-medium text-slate-600">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  <button
-                    disabled={currentPage === totalPages}
-                    onClick={() => setCurrentPage((prev) => prev + 1)}
-                    className="p-2 disabled:opacity-30 border rounded-lg bg-white"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                </div>
-              )}
-            </div>
+            </>
           )}
         </div>
       </div>

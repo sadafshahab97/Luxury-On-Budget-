@@ -20,17 +20,14 @@ export default function CategoryPage({ params }: PageProps) {
   const router = useRouter();
   const { products, loading } = useProducts();
 
-  // State for Modal
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  // 1. Validate category lookup
   const category = useMemo(() => {
     return CATEGORIES.find(
       (c) => c.id.toLowerCase() === categoryId.toLowerCase(),
     );
   }, [categoryId]);
 
-  // 2. Filter products for grid
   const categoryProducts = useMemo(() => {
     if (!products) return [];
     return products.filter(
@@ -38,7 +35,6 @@ export default function CategoryPage({ params }: PageProps) {
     );
   }, [products, categoryId]);
 
-  // 3. DEEP LINKING LOGIC: URL se productId check karein
   useEffect(() => {
     const productIdFromUrl = searchParams.get("productId");
 
@@ -53,10 +49,9 @@ export default function CategoryPage({ params }: PageProps) {
     }
   }, [searchParams, products]);
 
-  // Modal band karne ka function
   const handleCloseModal = () => {
     setSelectedProduct(null);
-    // URL se productId hata dein taake clean URL ho jaye
+
     router.push(`/category/${categoryId}`, { scroll: false });
   };
 

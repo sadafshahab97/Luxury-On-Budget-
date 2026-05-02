@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Product } from "../context/ProductContext"; // Updated to use Context Type
+import { Product } from "../context/ProductContext";
 import { ProductCard } from "./ProductCard";
 import { Loader2 } from "lucide-react";
 
@@ -18,7 +18,6 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
 
   const ITEMS_PER_PAGE = 8;
 
-  // Jab main products list update ho (Category change ya Initial load)
   useEffect(() => {
     const updateProductList = () => {
       if (products.length > 0) {
@@ -37,7 +36,6 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
 
     setIsLoading(true);
 
-    // Simulate network delay for smooth feel
     setTimeout(() => {
       setDisplayedProducts((prev) => {
         const nextBatchStart = prev.length;
@@ -55,7 +53,6 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
     }, 800);
   }, [isLoading, hasMore, products]);
 
-  // Observer callback: Yeh detect karta hai jab user last item tak pohanch jaye
   const lastProductElementRef = useCallback(
     (node: HTMLDivElement | null) => {
       if (isLoading) return;
@@ -72,7 +69,6 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
     [isLoading, hasMore, loadMore],
   );
 
-  // Empty State
   if (products.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center animate-in fade-in duration-500">
@@ -98,7 +94,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
 
           return (
             <div
-              key={product.id} // Supabase ID is unique, no need to append page strings
+              key={product.id}
               ref={isLastElement ? lastProductElementRef : null}
               className="h-full"
             >

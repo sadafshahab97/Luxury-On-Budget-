@@ -15,7 +15,6 @@ export const Navbar = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
-  // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -29,7 +28,6 @@ export const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Close menus when route changes
   useEffect(() => {
     const closeMenu = () => {
       setIsMobileMenuOpen(false);
@@ -48,7 +46,7 @@ export const Navbar = () => {
               <ShoppingBag className="w-5 h-5" />
             </div>
             <span className="font-bold text-xl tracking-tight text-slate-900">
-              PinTrending
+              Luxury On Budget
             </span>
           </Link>
 
@@ -102,7 +100,6 @@ export const Navbar = () => {
                       className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-slate-100 py-2 z-50"
                     >
                       {CATEGORIES.map((cat) => {
-                        // FIX: Ensure path matches your folder structure /category/[categoryId]
                         const categoryPath = `/category/${cat.id}`;
                         const isActive = pathname === categoryPath;
 

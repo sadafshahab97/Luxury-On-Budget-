@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import { ProductGrid } from "./components/ProductGrid";
 import { motion } from "motion/react";
 import { Sparkles } from "lucide-react";

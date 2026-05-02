@@ -1,4 +1,4 @@
-"use client"; // Client-side hooks aur animations ke liye zaroori hai
+"use client";
 
 import React, {
   createContext,
@@ -7,7 +7,7 @@ import React, {
   useCallback,
   ReactNode,
 } from "react";
-import { motion, AnimatePresence } from "framer-motion"; // motion/react ki jagah standard framer-motion
+import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2 } from "lucide-react";
 
 interface ToastContextType {
@@ -22,7 +22,6 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
   const toast = useCallback((msg: string) => {
     setMessage(msg);
 
-    // Timer ko cleanup ke saath handle karna behtar hai
     const timer = setTimeout(() => setMessage(null), 3000);
     return () => clearTimeout(timer);
   }, []);

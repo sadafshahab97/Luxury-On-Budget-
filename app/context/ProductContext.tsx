@@ -51,14 +51,12 @@ interface ProductContextType {
   products: Product[];
   loading: boolean;
 
-  // addProduct ke liye hum Omit use karenge kyunke naye product ke pas 'id' nahi hoti
   addProduct: (
     productData: Omit<Product, "id" | "created_at">,
   ) => Promise<void>;
 
   deleteProduct: (id: string) => Promise<void>;
 
-  // editProduct ke liye Partial use karenge kyunke ho sakta hai user sirf ek field update kare
   editProduct: (id: string, updatedData: Partial<Product>) => Promise<void>;
 }
 
@@ -68,7 +66,6 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 1. Fetch Products from Supabase
   const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -93,10 +90,8 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
     fetch();
   }, []);
 
-  // 2. Add Product Logic (Handling Temu JSON)
   const addProduct = async (jsonData: RawProductInput): Promise<void> => {
     try {
-      // Omit id because DB handles it
       const newEntry: Omit<Product, "id" | "created_at"> = {
         product_name: jsonData.product_name || "New Product",
         current_price:
@@ -125,7 +120,6 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // 3. Delete Product
   const deleteProduct = async (id: string) => {
     try {
       const { error } = await supabase.from("products").delete().eq("id", id);
@@ -136,13 +130,11 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // 4. Edit Product (Ensuring Flat Data for Supabase)
   const editProduct = async (
     id: string,
     updatedData: Partial<Product>,
   ): Promise<void> => {
     try {
-      // Step A: Mapping with explicit types
       const formattedData: Partial<Product> = {
         product_name: updatedData.product_name,
         current_price: updatedData.current_price,
@@ -156,7 +148,6 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
         category: updatedData.category,
       };
 
-      // Step B: Supabase Update Call
       const { data, error } = await supabase
         .from("products")
         .update(formattedData)
@@ -171,7 +162,6 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
 
       if (!data || data.length === 0) return;
 
-      // Step C: Update Local State
       setProducts((prev) =>
         prev.map((p) => (p.id === id ? { ...p, ...formattedData } : p)),
       );

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react"; // useEffect add kiya
+import React, { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { useRouter } from "next/navigation";
 import { Lock, Loader2 } from "lucide-react";
@@ -10,8 +10,6 @@ export const LoginForm = () => {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // --- Auto-Login Check ---
-  // Agar user pehle se login hai toh usay login page par mat rukne dein
   useEffect(() => {
     const checkUser = async () => {
       const {
@@ -43,8 +41,6 @@ export const LoginForm = () => {
       if (data?.user) {
         console.log("Login Successful! Syncing Profile...");
 
-        // Pehle profile database mein confirm/create karein
-        // Hum upsert use kar rahe hain taake agar row nahi hai toh ban jaye
         const { error: upsertError } = await supabase.from("profiles").upsert({
           id: data.user.id,
           email: data.user.email,
@@ -54,13 +50,11 @@ export const LoginForm = () => {
 
         if (upsertError) {
           console.error("Profile Sync Error:", upsertError);
-          // Agar database sync fail bhi ho jaye, tab bhi dashboard bhej dein
-          // kyunke humne middleware hta dia hai
         }
 
         console.log("Redirecting to Dashboard...");
         router.push("/dashboard");
-        router.refresh(); // Next.js cache clear karne ke liye
+        router.refresh();
       }
     } catch (err) {
       console.error("Unexpected error:", err);
