@@ -5,6 +5,7 @@ import "./globals.css";
 import { ProductProvider } from "./context/ProductContext";
 import { ToastProvider } from "./components/ToastContext";
 import { Navbar } from "./components/Navbar";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 const jakarta = Plus_Jakarta_Sans({
   weight: ["400", "800"],
@@ -70,7 +71,7 @@ export default function RootLayout({
       },
     },
   };
-
+  const gaId = process.env.NEXT_PUBLIC_GA_ID;
   return (
     <html lang="en">
       <head>
@@ -92,6 +93,7 @@ export default function RootLayout({
           </ToastProvider>
         </ProductProvider>
       </body>
+      {gaId && <GoogleAnalytics gaId={gaId} />}
     </html>
   );
 }
