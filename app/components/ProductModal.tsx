@@ -13,7 +13,7 @@ export const ProductModal = ({
   onClose: () => void;
 }) => {
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6">
+    <div className="fixed inset-0 z-150 flex items-center justify-center p-4 sm:p-6">
       {/* Backdrop */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -28,7 +28,7 @@ export const ProductModal = ({
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.9, opacity: 0, y: 20 }}
-        className="bg-white rounded-[2rem] md:rounded-[2.5rem] max-w-4xl w-full max-h-[90vh] overflow-y-auto md:overflow-hidden relative shadow-[0_32px_64px_-12px_rgba(0,0,0,0.3)] z-[151] grid md:grid-cols-2"
+        className="bg-white rounded-4xl md:rounded-[2.5rem] max-w-4xl w-full max-h-[90vh] overflow-y-auto md:overflow-hidden relative shadow-[0_32px_64px_-12px_rgba(0,0,0,0.3)] z-151 grid md:grid-cols-2"
       >
         {/* Close Button */}
         <button
@@ -39,7 +39,7 @@ export const ProductModal = ({
         </button>
 
         {/* Left: Image Section */}
-        <div className="relative h-[280px] sm:h-[350px] md:h-full bg-slate-50 flex items-center justify-center group overflow-hidden">
+        <div className="relative h-70 sm:h-87.5 md:h-full bg-slate-50 flex items-center justify-center group overflow-hidden">
           <Image
             src={product.image_url}
             alt={product.product_name}
@@ -48,7 +48,7 @@ export const ProductModal = ({
             className="object-contain h-full w-full p-6 md:p-12 group-hover:scale-105 transition-transform duration-500"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/5 to-transparent pointer-events-none" />
         </div>
 
         {/* Right: Content Section */}
