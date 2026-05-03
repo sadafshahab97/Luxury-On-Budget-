@@ -28,10 +28,9 @@ export const ProductModal = ({
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.9, opacity: 0, y: 20 }}
-        // Added max-h and overflow for mobile scrolling
         className="bg-white rounded-[2rem] md:rounded-[2.5rem] max-w-4xl w-full max-h-[90vh] overflow-y-auto md:overflow-hidden relative shadow-[0_32px_64px_-12px_rgba(0,0,0,0.3)] z-[151] grid md:grid-cols-2"
       >
-        {/* Close Button - Responsive Position */}
+        {/* Close Button */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 md:top-5 md:right-5 z-30 p-2 bg-white/80 md:bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-full transition-all active:scale-90 shadow-sm"
@@ -55,7 +54,7 @@ export const ProductModal = ({
         {/* Right: Content Section */}
         <div className="p-6 md:p-12 flex flex-col justify-center bg-white">
           <div className="flex items-center gap-2 mb-3 md:mb-4">
-            <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border border-blue-100">
+            <span className="bg-red-50 text-red-600 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border border-red-100">
               {product.category}
             </span>
             <span className="flex items-center gap-1 text-emerald-600 text-[10px] font-bold uppercase tracking-widest">
@@ -63,15 +62,13 @@ export const ProductModal = ({
             </span>
           </div>
 
-          <h2 className="text-lg md:text-3xl font-extrabold text-slate-900 leading-tight mb-2">
+          {/* Truncated Product Name */}
+          <h2
+            className="text-lg md:text-3xl font-extrabold text-slate-900 leading-tight mb-2 line-clamp-2 md:line-clamp-3"
+            title={product.product_name}
+          >
             {product.product_name}
           </h2>
-
-          <p className="text-slate-500 text-sm mb-6 leading-relaxed">
-            Experience premium quality and design with our latest{" "}
-            {product.category} collection. Built for performance and everyday
-            style.
-          </p>
 
           <div className="flex items-baseline gap-3 mb-6 md:mb-8">
             <span className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
@@ -87,7 +84,7 @@ export const ProductModal = ({
               href={product.product_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="group bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200 transition-all active:scale-[0.98]"
+              className="group bg-red-600 text-white px-8 py-4 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-red-700 hover:shadow-lg hover:shadow-red-200 transition-all active:scale-[0.98]"
             >
               <ShoppingBag className="w-5 h-5 group-hover:animate-bounce" />
               <span>Buy Now</span>
