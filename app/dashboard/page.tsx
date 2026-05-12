@@ -579,7 +579,7 @@ export default function DashboardPage() {
                           </h3>
                           <div className="mt-1 flex items-center gap-1 text-[10px] text-blue-500 font-mono bg-blue-50 w-fit px-2 py-0.5 rounded">
                             <ExternalLink className="w-3 h-3" />
-                            <span className=" max-w-[200px]">
+                            <span className=" max-w-100">
                               {`${window.location.origin}/category/${product.category?.toLowerCase() || "products"}?productId=${product.id}`}
                             </span>
                           </div>
