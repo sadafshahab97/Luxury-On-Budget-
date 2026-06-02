@@ -29,6 +29,11 @@ export const metadata: Metadata = {
     "Pinterest Trends",
   ],
   authors: [{ name: "Sadaf Shahab" }],
+  verification: {
+    other: {
+      "p:domain_verify": ["41c7be950d2da9890dc0afc9a1041303"],
+    },
+  },
   openGraph: {
     title: "Luxury On Budget",
     description: "Discover trending viral products at the best prices.",
@@ -71,7 +76,9 @@ export default function RootLayout({
       },
     },
   };
+
   const gaId = process.env.NEXT_PUBLIC_GA_ID;
+
   return (
     <html lang="en">
       <head>
@@ -92,8 +99,8 @@ export default function RootLayout({
             </main>
           </ToastProvider>
         </ProductProvider>
+        {gaId && <GoogleAnalytics gaId={gaId} />}
       </body>
-      {gaId && <GoogleAnalytics gaId={gaId} />}
     </html>
   );
 }
